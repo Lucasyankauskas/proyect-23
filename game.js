@@ -1,3 +1,4 @@
+import { createAnimations } from "./animations.js";
 
 
 const config = {
@@ -6,6 +7,13 @@ const config = {
     height: 244,
     backgroundColor: '#049cd8',
     parent: 'game',
+    physics: {
+        default: 'arcade',
+        arcade: {
+            gravity: { y: 300 },
+            debug: false
+        }
+    },
     scene: {
         preload,
         create,
@@ -20,6 +28,7 @@ function preload() {
         'cloud1',
         'assets/scenery/overworld/cloud1.png'
     );
+
     this.load.spritesheet(
         'mario',
         'assets/entities/mario.png',
@@ -28,6 +37,7 @@ function preload() {
             frameHeight: 16
         }
     );
+
     this.load.image(
         'floorbricks',
         'assets/scenery/overworld/floorbricks.png'
@@ -40,11 +50,32 @@ function create() {
         .setScale(0.15)
         .setOrigin(0, 0);
 
-    this.add.sprite(50, 210, 'mario')
-        .setOrigin(0, 1);
+    this.floor = this.physics.add.staticGroup();
 
-    this.add.tileSprite(0, config.height - 32, config.width, 32, 'floorbricks')
-        .setOrigin(0, 0);
+    this.floor.create(0, config.height - 16, 'floorbricks')
+        .setOrigin(0, 0.5)
+        .refreshBody();
+
+    this.floor.create(150, config.height - 16, 'floorbricks')
+        .setOrigin(0, 0.5)
+        .refreshBody();
+
+    this.mario = this.physics.add.sprite(50, 100, 'mario')
+        .setOrigin(0, 1)
+        .setCollideWorldBounds(true)
+        .setGravityY(400)
+
+    this.physics.world.setBounds(0, 0, 2000, config.height);
+
+    this.physics.add.collider(this.mario, this.floor);
+
+    this.cameras.main.setBounds(0, 0, 2000, config.height);
+    this.cameras.main.startFollow(this.mario);
+
+    createAnimations(this);
+
+    this.keys = this.input.keyboard.createCursorKeys();
+
 
 };
 
@@ -52,5 +83,22 @@ function create() {
 
 
 function update() {
+    if (this.keys.left.isDown) {
+        this.mario.x -= 2;
+        this.mario.anims.play('mario-walk', true);
+        this.mario.flipX = true;
+    } else if (this.keys.right.isDown) {
+        this.mario.x += 2;
+        this.mario.anims.play('mario-walk', true);
+        this.mario.flipX = false;
+    } else {
+        this.mario.anims.play('mario-idle', true);
+    }
+
+    if (this.keys.up.isDown && this.mario.body.touching.down) {
+        this.mario.setVelocityY(-300);
+        this.mario.anims.play('mario-jump', true);
+    }
+
 
 };
